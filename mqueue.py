@@ -48,6 +48,7 @@ class Queue:
 		self.subscriptions = None
 		self.cb_on_pause = None
 		self.cb_on_navigate = None
+		self.cb_on_speed = None
 
 	def read_queue(self) -> list:
 		return [Entry.decode(ent) for ent in self.redis.lrange("musicaqueue", 0, -1)]
@@ -132,6 +133,10 @@ class Queue:
 		assert type(rel) == float
 		self.redis.publish("musicacontrol", json.dumps({"cmd": "navigate", "rel": rel}))
 
+	def speed(self, mul: float) -> None:
+		assert type(mul) == float
+		self.redis.publish("musicacontrol", json.dumps({"cmd": "speed", "mul": mul}))
+
 	def subscribe_on_pause(self, on_pause):
 		if self.cb_on_pause is not None:
 			raise Exception("duplicate subscription of on_pause")
@@ -144,6 +149,12 @@ class Queue:
 		self.cb_on_navigate = on_navigate
 		self.subscribe_updates()
 
+	def subscribe_on_speed(self, on_speed):
+		if self.cb_on_speed is not None:
+			raise Exception("duplicate subscription of on_speed")
+		self.cb_on_speed = on_speed
+		self.subscribe_updates()
+
 	def _recv_callback(self, message):
 		jmsg = json.loads(message["data"].decode())
 		if type(jmsg) != dict:
@@ -154,6 +165,9 @@ class Queue:
 		elif jmsg.get("cmd") == "navigate" and type(jmsg.get("rel")) == float:
 			if self.cb_on_navigate is not None:
 				self.cb_on_navigate(jmsg["rel"])
+		elif jmsg.get("cmd") == "speed" and type(jmsg.get("mul")) == float:
+			if self.cb_on_speed is not None:
+				self.cb_on_speed(jmsg["mul"])
 		else:
 			print("unrecognized message: %s" % jmsg)
 
@@ -230,7 +244,7 @@ class Fetcher:
 		self.ytdl_path = os.path.join(os.getenv("HOME"), ".local", "bin", "youtube-dl")
 
 	def _gen_cmdline(self, ytid: str, for_title: bool=False) -> list:
-		return [self.ytdl_path, "--no-playlist", "--id", "--no-progress", "--format", "mp4"] + (["--get-title"] if for_title else []) + ["--", sanitize_ytid(ytid)]
+            return [self.ytdl_path, "--no-playlist", "--id", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]'] + (["--get-title"] if for_title else []) + ["--", sanitize_ytid(ytid)]
 
 	def get_title(self, ytid: str) -> str:
 		return subprocess.check_output(self._gen_cmdline(ytid, for_title=True)).strip()

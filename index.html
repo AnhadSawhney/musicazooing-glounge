@@ -13,7 +13,8 @@ body {
 <h1>Musicazoo</h1>
 <p id="nowplaying" style="display: none;">Now Playing: <span id="playingtitle"></span> <span id="playingtime"></span>/<span id="playinglength"></span> <span id="paused">[Paused]</span></p>
 <p>Volume: <button id="sub">-</button><span id="vol">loading</span><button id="add">+</button></p>
-<p><button id="pause">play/pause</button> <button id="reverse">&lt;&lt;</button> <button id="forward">&gt;&gt;</button> <button id="mirrorbtn">Mirror</button></p>
+<p>Speed: <span id="speed">loading</span>× <button id="speed02">0.25×</button><button id="speed05">0.5×</button><button id="speed07">0.75×</button><button id="speed10">1.0×</button><button id="speed12">1.25×</button><button id="speed15">1.5×</button><button id="speed17">1.75×</button><button id="speed20">2×</button><button id="speed25">2.5×</button><button id="speed30">3×</button></p>
+<p><button id="pause">play/pause</button> <button id="reverse">&lt;&lt;</button> <button id="rev">&lt;</button> <button id="fwd">&gt;</button> <button id="forward">&gt;&gt;</button> <button id="mirrorbtn">Mirror</button></p>
 <p style="display: none" id="mirror"></p>
 <p>Use this form to queue new videos:</p>
 <input type="text" id="youtube_id" placeholder="youtube search or ID"> <button id="submit">Queue</button> <button id="suggest">Search</button> <button id="random">Random</button>
@@ -78,8 +79,21 @@ body {
 		var pausebtn = document.getElementById("pause");
 		var forwardbtn = document.getElementById("forward");
 		var reversebtn = document.getElementById("reverse");
+		var fwdbtn = document.getElementById("fwd");
+		var revbtn = document.getElementById("rev");
 		var mirrorbtn = document.getElementById("mirrorbtn");
 		var random = document.getElementById("random");
+		var speed = document.getElementById("speed");
+		var speed02 = document.getElementById("speed02");
+		var speed05 = document.getElementById("speed05");
+		var speed07 = document.getElementById("speed07");
+		var speed10 = document.getElementById("speed10");
+		var speed12 = document.getElementById("speed12");
+		var speed15 = document.getElementById("speed15");
+		var speed17 = document.getElementById("speed17");
+		var speed20 = document.getElementById("speed20");
+		var speed25 = document.getElementById("speed25");
+		var speed30 = document.getElementById("speed30");
 		var cachedDice = document.createElement("img");
 		cachedDice.src = "/images/dice.svg";
 		function clear_suggestions() {
@@ -106,6 +120,16 @@ body {
 			random.disabled = true;
 			json_request(function() { random.disabled=false; }, function(err) { random.disabled = false; console.log(err); }, "random");
 		};
+		speed02.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(0.25)) }
+		speed05.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(0.50)) }
+		speed07.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(0.75)) }
+		speed10.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(1.00)) }
+		speed12.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(1.25)) }
+		speed15.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(1.50)) }
+		speed17.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(1.75)) }
+		speed20.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(2.00)) }
+		speed25.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(2.50)) }
+		speed30.onclick = function() { json_request(function() {}, default_err, "speed?mul=" + encodeURIComponent(3.00)) }
 		function reorder(uuid, direction) {
 			json_request(function() {}, default_err, "reorder?uuid=" + encodeURIComponent(uuid) + "&dir=" + encodeURIComponent("" + direction));
 		};
@@ -118,7 +142,13 @@ body {
 		reversebtn.onclick = function() {
 			json_request(function() {}, default_err, "navigate?rel=-30");
 		};
-		function update_mirror(ytid, time, paused) {
+		fwdbtn.onclick = function() {
+			json_request(function() {}, default_err, "navigate?rel=10");
+		};
+		revbtn.onclick = function() {
+			json_request(function() {}, default_err, "navigate?rel=-10");
+		};
+		function update_mirror(ytid, time, paused, speed) {
 			var mirrorvideo = document.getElementById("mirrorvideo");
 			if (!ytid || mirror.style.display === "none") {
 				if (mirrorvideo !== null) {
@@ -149,6 +179,9 @@ body {
 				mirrorvideo.play();
 			} else if (!mirrorvideo.paused && paused) {
 				mirrorvideo.pause();
+			}
+			if (mirrorvideo.playbackRate != speed) {
+				mirrorvideo.playbackRate = speed;
 			}
 		}
 		mirrorbtn.onclick = function() {
@@ -223,16 +256,21 @@ body {
 					pausebtn.disabled = false;
 					forwardbtn.disabled = false;
 					reversebtn.disabled = false;
-					update_mirror(data.listing[0].ytid, data.time, data.paused);
+					fwdbtn.disabled = false;
+					revbtn.disabled = false;
+					update_mirror(data.listing[0].ytid, data.time, data.paused, data.speed);
 				} else {
 					nowplaying.style.display = "none";
 					pausebtn.disabled = true;
 					forwardbtn.disabled = true;
 					reversebtn.disabled = true;
+					fwdbtn.disabled = true;
+					revbtn.disabled = true;
 					update_mirror(null);
 				}
 				current_volume = data.volume;
 				vol.textContent = current_volume !== null ? current_volume : "loading";
+				speed.textContent = data.speed;
 				var total = "";
 				for (var i = 0; i < data.listing.length; i++) {
 					total += "<li><span></span> | <button>delete</button> | <button>up</button> <button>down</button></li>";

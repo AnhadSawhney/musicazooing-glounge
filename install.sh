@@ -7,10 +7,9 @@ HERE=$(pwd)
 
 . ./config.env
 
-
-echo "=> Installing debian packages"
-sudo apt-get update
-sudo apt-get install python3-pip nginx redis-server mplayer
+echo "=> Installing other debian packages"
+sudo apt update
+sudo apt install python3-pip redis-server mpv
 
 
 echo "=> Installing pip packages"
@@ -26,9 +25,9 @@ do
 done
 
 
-echo "=> Setting up nginx web server"
-cat $HERE/nginx-site | sed "s|DIR|$MZ_LOCATION|" | sudo tee /etc/nginx/sites-available/musicazoo > /dev/null
-sudo ln -sf /etc/nginx/sites-available/musicazoo /etc/nginx/sites-enabled/musicazoo
+#echo "=> Setting up nginx web server"
+#cat $HERE/nginx-site | sed "s|DIR|$MZ_LOCATION|" | sudo tee /etc/nginx/sites-available/musicazoo > /dev/null
+#sudo ln -sf /etc/nginx/sites-available/musicazoo /etc/nginx/sites-enabled/musicazoo
 
 
 echo "=> Disabling unwanted programs"

@@ -3,7 +3,7 @@ WW=1920
 HH=1080
 # HH=720
 # HH=$((${WW} * 5625 / 10000))
-RR=60
+RR=59.8
 CVT=$(cvt $WW $HH $RR | tail -n 1 | cut -d " " -f 2-)
 CNAME=$(echo $CVT | cut -d " " -f 1)
 xrandr --newmode ${CVT} 2>/dev/null || true

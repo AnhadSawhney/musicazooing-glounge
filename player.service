@@ -3,7 +3,7 @@ Description=musicazoo player service
 
 [Service]
 EnvironmentFile=DIR/config.env
-ExecStart=/usr/bin/python3 DIR/player.py
+ExecStart=/usr/bin/python3 DIR/player-mpv.py
 Restart=always
 
 [Install]

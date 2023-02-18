@@ -58,15 +58,18 @@ class Musicazoo:
 		return playback_status
 
 	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def delete(self, uuid):
 		if self.skew():
-			return
+			return {"success": False}
 		# TODO: why is this a loop?
+                # Answer: In case the UUID isn't U(nique)?
 		while True:
 			found = queue.read_queue_by_uuid(uuid)
 			if found is None:
 				break
 			queue.remove(found)
+		return {"success": True}
 
 	@cherrypy.expose
 	def reorder(self, uuid, dir):
@@ -118,12 +121,23 @@ class Musicazoo:
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
+	def speed(self, mul):
+		try:
+			mul = float(mul)
+		except ValueError:
+			return "fail"
+		queue.speed(mul)
+		return "ok"
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def top(self):
-		frequencies = []
-		for member, (title, plays) in queue.play_counts():
-			frequencies.append((member, title, plays))
-		frequencies.sort(reverse=True, key=lambda x: x[2])
-		return frequencies
+		return "Nah."
+		#frequencies = []
+		#for member, (title, plays) in queue.play_counts().items():
+		#	frequencies.append((member, title, plays))
+		#frequencies.sort(reverse=True, key=lambda x: x[2])
+		#return frequencies
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()

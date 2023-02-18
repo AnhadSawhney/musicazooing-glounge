@@ -16,6 +16,8 @@ if display_video:
 		player_args = ("-fs", "--xineramascreen=%s" % xinerama_screen)
 	else:
 		player_args = ("-fs")
+	subprocess.check_call(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configure-screen.sh"))
+
 else:
 	player_args = ("-vo", "null")
 
@@ -23,9 +25,6 @@ player = mplayer.Player(args=player_args)
 
 queue = mqueue.Queue()
 stash = mqueue.Stash()
-
-if display_video:
-	subprocess.check_call(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configure-screen.sh"))
 
 def start_playing(uuid, ytid):
 	global current_uuid, should_be_paused, player
@@ -72,14 +71,21 @@ def on_navigate(rel: float):
 			nt = 0
 		player.time_pos = nt
 
+def on_speed(mul: float):
+	global player
+	if player is not None and player.filename is not None:
+		if 0.1 <= mul <= 10:
+			player.speed = mul
+
 queue.subscribe_on_pause(on_pause)
 queue.subscribe_on_navigate(on_navigate)
+queue.subscribe_on_speed(on_speed)
 
 def status_update():
 	global player
 	if player is None:
 		return
-	queue.set_playback_status({"paused": player.paused, "time": player.time_pos or 0, "length": player.length or 0})
+        queue.set_playback_status({"paused": player.paused, "time": player.time_pos or 0, "length": player.length or 0, "speed": player.speed})
 
 while True:
 	if player is not None and player.filename is not None and player.paused != should_be_paused:
