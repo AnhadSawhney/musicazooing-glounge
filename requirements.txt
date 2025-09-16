@@ -1,0 +1,5 @@
+mqueue
+mpv
+cherrypy
+redis
+python-mpv
