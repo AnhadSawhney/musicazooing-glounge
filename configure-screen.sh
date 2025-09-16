@@ -14,3 +14,5 @@ xrandr --output VGA-1 --mode ${CNAME} --pos 0x0 --rotate normal
 xset dpms force on  # is this necessary?
 xset s off
 xset -dpms
+
+#
