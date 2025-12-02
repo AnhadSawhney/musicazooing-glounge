@@ -266,12 +266,13 @@ class Fetcher:
 		if urp is None or urp.scheme not in ("", "http", "https"):
 			return None
 		if urp.netloc in ("youtube.com", "m.youtube.com", "www.youtube.com"):
-			if urp.path != "/watch":
-				return None
-			videos = urllib.parse.parse_qs(urp.query).get("v","")
-			if not videos:
-				return None
-			video = videos[0]
+			if urp.path.startswith("/shorts/"):
+				video = urp.path[len("/shorts/"):]
+			if urp.path == "/watch":
+				videos = urllib.parse.parse_qs(urp.query).get("v","")
+				if not videos:
+					return None
+				video = videos[0]
 		elif urp.netloc == "youtu.be":
 			video = urp.path.lstrip("/")
 		else:
