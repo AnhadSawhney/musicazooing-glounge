@@ -243,15 +243,21 @@ class Fetcher:
 	def __init__(self):
 		self.ytdl_path = os.path.join(os.getenv("HOME"), ".local", "bin", "yt-dlp")
 
-	def _gen_cmdline(self, ytid: str, for_title: bool=False) -> list:
-            return [self.ytdl_path, "--cookies", "~/cookies.txt", "--no-playlist", "--id", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]'] + (["--get-title"] if for_title else []) + ["--", ytid]
+	def _gen_cmdline(self, ytid: str, for_title: bool=False, output_path: str=None) -> list:
+		cmd = [self.ytdl_path, "--cookies", "~/cookies.txt", "--no-playlist", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]']
+		if for_title:
+			cmd.append("--get-title")
+		if output_path:
+			cmd.extend(["-o", output_path])
+		cmd.extend(["--", ytid])
+		return cmd
 
 	def get_title(self, ytid: str) -> str:
 		return subprocess.check_output(self._gen_cmdline(ytid, for_title=True)).strip()
 
-	# TODO: manage filenames explicitly
 	def download_into(self, ytid: str, stash: Stash):
-		return subprocess.call(self._gen_cmdline(ytid), cwd=stash.dir) == 0
+		output_path = stash.path_for(ytid)
+		return subprocess.call(self._gen_cmdline(ytid, output_path=output_path)) == 0
 
 	def parse_video_url(self, url: str):
 		"""
