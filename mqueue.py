@@ -216,7 +216,7 @@ class Queue:
 
 
 def sanitize_ytid(ytid):
-	return re.sub("[^-a-zA-Z0-9_:]", "_", ytid)
+	return re.sub("[^-a-zA-Z0-9_]", "_", ytid)
 
 
 class Stash:
