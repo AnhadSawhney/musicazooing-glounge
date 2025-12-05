@@ -216,7 +216,7 @@ class Queue:
 
 
 def sanitize_ytid(ytid):
-	return re.sub("[^-a-zA-Z0-9_:]", "?", ytid)
+	return re.sub("[^-a-zA-Z0-9_:]", "_", ytid)
 
 
 class Stash:
@@ -244,7 +244,7 @@ class Fetcher:
 		self.ytdl_path = os.path.join(os.getenv("HOME"), ".local", "bin", "yt-dlp")
 
 	def _gen_cmdline(self, ytid: str, for_title: bool=False) -> list:
-            return [self.ytdl_path, "--cookies", "~/cookies.txt", "--no-playlist", "--id", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]'] + (["--get-title"] if for_title else []) + ["--", sanitize_ytid(ytid)]
+            return [self.ytdl_path, "--cookies", "~/cookies.txt", "--no-playlist", "--id", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]'] + (["--get-title"] if for_title else []) + ["--", ytid]
 
 	def get_title(self, ytid: str) -> str:
 		return subprocess.check_output(self._gen_cmdline(ytid, for_title=True)).strip()
@@ -255,7 +255,10 @@ class Fetcher:
 
 	def parse_video_url(self, url: str):
 		"""
-		If the provided URL is a unique reference to a youtube ID, return the ID. Otherwise, return None.
+		If the provided URL is a unique reference to a video, return the video ID or URL.
+		For YouTube, returns the 11-character video ID.
+		For Twitter/X, returns the full URL (yt-dlp handles it).
+		Otherwise, return None.
 		"""
 		if "//" not in url:
 			url = "https://" + url
@@ -265,21 +268,35 @@ class Fetcher:
 			return None
 		if urp is None or urp.scheme not in ("", "http", "https"):
 			return None
+
+		# YouTube handling
 		if urp.netloc in ("youtube.com", "m.youtube.com", "www.youtube.com"):
+			video = None
 			if urp.path.startswith("/shorts/"):
 				video = urp.path[len("/shorts/"):]
-			if urp.path == "/watch":
-				videos = urllib.parse.parse_qs(urp.query).get("v","")
-				if not videos:
-					return None
-				video = videos[0]
+			elif urp.path == "/watch":
+				videos = urllib.parse.parse_qs(urp.query).get("v", "")
+				if videos:
+					video = videos[0]
+			if video and len(video) == 11 and sanitize_ytid(video) == video:
+				return video
+			return None
 		elif urp.netloc == "youtu.be":
 			video = urp.path.lstrip("/")
-		else:
+			if len(video) == 11 and sanitize_ytid(video) == video:
+				return video
 			return None
-		if len(video) != 11 or sanitize_ytid(video) != video:
+
+		# Twitter/X handling
+		if urp.netloc in ("twitter.com", "www.twitter.com", "x.com", "www.x.com", "mobile.twitter.com", "mobile.x.com"):
+			# Match paths like /user/status/1234567890
+			match = re.match(r"^/[^/]+/status/(\d+)", urp.path)
+			if match:
+				# Return full URL for yt-dlp
+				return url
 			return None
-		return video
+
+		return None
 
 	def query_search(self, query, search=True):
 		if not query:
