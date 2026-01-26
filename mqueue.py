@@ -242,9 +242,11 @@ class Stash:
 class Fetcher:
 	def __init__(self):
 		self.ytdl_path = os.path.join(os.getenv("HOME"), ".local", "bin", "yt-dlp")
+		self.deno_path = os.path.join(os.getenv("HOME"), ".deno", "bin", "deno")
+		self.cookie_path = os.path.join(os.getenv("HOME"), "cookies.txt")
 
 	def _gen_cmdline(self, ytid: str, for_title: bool=False, output_path: str=None) -> list:
-		cmd = [self.ytdl_path, "--cookies", "~/cookies.txt", "--no-playlist", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]']
+		cmd = [self.ytdl_path, '--js-runtimes', 'deno:' + self.deno_path, "--cookies", self.cookie_path, "--no-playlist", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]']
 		if for_title:
 			cmd.append("--get-title")
 		if output_path:

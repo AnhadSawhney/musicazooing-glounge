@@ -11,6 +11,8 @@ echo "=> Installing other debian packages"
 sudo apt update
 sudo apt install python3-pip redis-server mpv
 
+echo "=> Installing deno in an unsafe way"
+curl -fsSL https://deno.land/install.sh | sh
 
 echo "=> Installing pip packages"
 pip3 install --user --upgrade cherrypy youtube-dl redis pyserial mplayer.py
