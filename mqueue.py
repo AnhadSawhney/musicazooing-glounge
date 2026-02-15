@@ -7,6 +7,7 @@ import subprocess
 import time
 import urllib.parse
 import uuid
+from pyroute2 import IPRoute
 
 
 class Entry:
@@ -244,14 +245,23 @@ class Fetcher:
 		self.ytdl_path = os.path.join(os.getenv("HOME"), ".local", "bin", "yt-dlp")
 		self.deno_path = os.path.join(os.getenv("HOME"), ".deno", "bin", "deno")
 		self.cookie_path = os.path.join(os.getenv("HOME"), "cookies.txt")
+		self.interface = "enp2s0"  # dynamic NIC
 
 	def _gen_cmdline(self, ytid: str, for_title: bool=False, output_path: str=None) -> list:
-		cmd = [self.ytdl_path, '--js-runtimes', 'deno:' + self.deno_path, "--cookies", self.cookie_path, "--no-playlist", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]']
+		ip = IPRoute()
+		idx = ip.link_lookup(ifname=self.interface)[0]
+		addrs = ip.get_addr(index=idx, family=2)  # AF_INET
+		if not addrs:
+			raise RuntimeError(f"Could not find IPv4 address on interface {self.interface}")
+		dynamic_ip = addrs[0].get_attr("IFA_ADDRESS")
+
+		cmd = [self.ytdl_path, '--source-address', dynamic_ip, '--js-runtimes', 'deno:' + self.deno_path, "--cookies", self.cookie_path, "--no-playlist", "--no-progress", '--format', 'bestvideo[height<=1080][width<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][width<=1920][ext=mp4]/best[ext=mp4]']
 		if for_title:
 			cmd.append("--get-title")
 		if output_path:
 			cmd.extend(["-o", output_path])
 		cmd.extend(["--", ytid])
+		print(cmd)
 		return cmd
 
 	def get_title(self, ytid: str) -> str:
